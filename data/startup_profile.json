@@ -1,0 +1,19 @@
+{
+  "name": "Anonymized MedTech Startup (Austria)",
+  "one_liner": "AI-assisted radiology platform: automated scan analysis and structured report generation for hospitals and imaging centers.",
+  "sector_keywords": [
+    "Medical Devices",
+    "Digital Health",
+    "HealthTech",
+    "AI in Healthcare",
+    "Diagnostics",
+    "Radiology AI",
+    "Clinical Software"
+  ],
+  "stage": "Seed",
+  "round_size_eur": 1500000,
+  "ticket_sweet_spot_eur": [250000, 1500000],
+  "geography_priority": ["DACH", "Europe", "Global"],
+  "traction": "Pilot deployments in 3 hospitals, CE/MDR pathway in progress, clinical advisory board in place.",
+  "raise_context": "Raising a EUR 1.5M seed round to expand hospital pilots and complete regulatory certification."
+}

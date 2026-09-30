@@ -1,0 +1,14 @@
+{
+  "model_top40_vs_human_top40_overlap": 30,
+  "precision_at_40": 0.75,
+  "recall_at_80": 0.85,
+  "mean_model_rank_of_human_picks": 37.8,
+  "human_picks_missed_by_model_top80": [
+    "David Huber",
+    "Drift Partners",
+    "Tyrol Venture Partners",
+    "Falcon Growth",
+    "Willow Venture Partners",
+    "Sebastian Rossi"
+  ]
+}

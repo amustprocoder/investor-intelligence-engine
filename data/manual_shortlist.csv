@@ -1,0 +1,41 @@
+investor_id,name,type,hq_country,geography_focus,stage_focus,sectors
+INV0188,Polar Invest,VC,Austria,DACH,Seed; Series A; Series B,Clinical Software; Digital Health; Diagnostics
+INV0416,Signal Venture Partners,VC,Germany,DACH,Pre-Seed; Seed,Medical Devices; HealthTech; Clinical Software
+INV0308,Femto Invest,VC,Austria,DACH,Pre-Seed; Seed; Series A,Clinical Software; Digital Health; Radiology AI
+INV0388,Granite Capital,VC,Austria,DACH,Seed; Series A,Clinical Software; HealthTech; AI in Healthcare
+INV0273,Marble Venture Partners,VC,Austria,DACH,Pre-Seed; Seed,Digital Health; Clinical Software; Radiology AI
+INV0113,Granite Partners,VC,Austria,DACH,Seed,AI in Healthcare; Medical Devices; Radiology AI
+INV0223,Tessel VC,VC,Switzerland,DACH,Seed,BioTech; Digital Health; Radiology AI
+INV0018,Vienna Corporate Ventures,CVC,Germany,DACH,Seed; Series A,BioTech; HealthTech; Medical Devices
+INV0414,Argo VC,VC,Germany,DACH,Seed; Series A; Series B,Clinical Software; AI in Healthcare; Radiology AI
+INV0053,Donau Partners,VC,Germany,DACH,Seed; Series A; Series B,HealthTech; Digital Health; Clinical Software
+INV0517,Hansa Ventures,VC,Germany,DACH,Seed; Series A,Radiology AI; AI in Healthcare; Clinical Software
+INV0184,David Huber,Angel,Austria,DACH,Pre-Seed,Diagnostics; Digital Health; HealthTech
+INV0439,Nord Corporate Ventures,CVC,Austria,DACH,Pre-Seed; Seed; Series A,Medical Devices; BioTech; Digital Health
+INV0194,Linden Growth,VC,Austria,DACH,Seed,Diagnostics; HealthTech; Radiology AI
+INV0256,Tessel Beteiligungen,Family Office,Germany,DACH,Seed; Series A,Clinical Software; Radiology AI; Diagnostics
+INV0220,Vertex Capital,VC,United Kingdom,Europe,Seed; Series A; Series B,AI in Healthcare; Clinical Software; Radiology AI
+INV0396,Elbe Venture Partners,VC,Germany,DACH,Seed,BioTech; Radiology AI; Digital Health
+INV0089,Vega Group,Family Office,Germany,DACH,Seed; Series A,Radiology AI; Clinical Software; Diagnostics
+INV0004,Quantum Venture Partners,VC,Germany,DACH,Seed; Series A,AI in Healthcare; Radiology AI; HealthTech
+INV0125,Kepler Venture Partners,VC,Austria,DACH,Seed; Series A; Series B,Radiology AI; AI in Healthcare; Medical Devices
+INV0407,Drift Partners,VC,Austria,DACH,Series A; Series B; Growth,Radiology AI; Clinical Software; Digital Health
+INV0406,Hansa Growth,VC,Germany,DACH,Series A,Digital Health; Medical Devices; Diagnostics
+INV0452,Zurich Holding,Family Office,Austria,DACH,Seed; Series A; Series B,AI in Healthcare; Digital Health; Clinical Software
+INV0013,Marble Group,Family Office,Switzerland,DACH,Pre-Seed; Seed,Digital Health; AI in Healthcare
+INV0258,Tyrol Venture Partners,VC,Germany,DACH,Seed,Digital Health; HealthTech
+INV0074,Union Ventures,VC,Spain,Europe,Seed; Series A,AI in Healthcare; Medical Devices
+INV0422,Delta VC,VC,Germany,DACH,Seed; Series A; Series B,Medical Devices; HealthTech
+INV0099,Sterling Capital,VC,France,Europe,Seed; Series A,Radiology AI; Diagnostics
+INV0451,Elbe Capital,VC,United Kingdom,Europe,Pre-Seed; Seed; Series A,Diagnostics; Radiology AI
+INV0465,VegaCare Innovation Fund,CVC,Germany,DACH,Seed; Series A; Series B,Clinical Software; AI in Healthcare
+INV0143,IsarHealth Innovation Fund,CVC,Austria,DACH,Seed; Series A; Series B,HealthTech; Radiology AI
+INV0262,Falcon Growth,VC,Austria,DACH,Series B; Growth,Clinical Software; Digital Health; Medical Devices
+INV0306,Rhein Family Office,Family Office,Israel,Global,Seed; Series A,AI in Healthcare; HealthTech; Digital Health
+INV0235,Willow Venture Partners,VC,Netherlands,Europe,Seed,Clinical Software; HealthTech
+INV0352,Astra Venture Partners,VC,Sweden,Europe,Seed; Series A,AI in Healthcare; Clinical Software
+INV0390,Sebastian Rossi,Angel,Germany,DACH,Series A; Series B,Medical Devices; Digital Health; Clinical Software
+INV0371,Zenith Capital,VC,Germany,DACH,Pre-Seed; Seed,Diagnostics; Medical Devices
+INV0176,Femto Ventures,VC,Italy,Europe,Seed; Series A,Radiology AI; Medical Devices
+INV0453,Alpen Capital,VC,France,Europe,Seed; Series A; Series B,BioTech; AI in Healthcare; Clinical Software
+INV0479,Nina Lindqvist,Angel,Germany,DACH,Seed; Series A,HealthTech; Diagnostics; BioTech
