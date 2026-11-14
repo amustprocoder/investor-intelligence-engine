@@ -1,0 +1,67 @@
+{
+  "in_sample": {
+    "v1_precision_at_40": 0.65,
+    "v2_precision_at_40": 0.725,
+    "best_grid_precision_at_40": 0.75,
+    "best_grid_params": {
+      "hit_w": 22,
+      "partial_w": 9,
+      "adjacent_stage": 55,
+      "geo_second": 65,
+      "geo_third": 25,
+      "w_thesis": 0.45,
+      "w_stage": 0.25,
+      "w_ticket": 0.2,
+      "w_geo": 0.1
+    }
+  },
+  "held_out": {
+    "n_splits": 25,
+    "k_per_half": 20,
+    "tuned_on_A_scored_on_A": {
+      "mean": 0.76,
+      "std": 0.053,
+      "min": 0.6,
+      "max": 0.85
+    },
+    "tuned_on_A_scored_on_B": {
+      "mean": 0.684,
+      "std": 0.061,
+      "min": 0.6,
+      "max": 0.85
+    },
+    "v1_hand_set_on_B": {
+      "mean": 0.674,
+      "std": 0.067,
+      "min": 0.55,
+      "max": 0.8
+    },
+    "v2_fixed_on_B_optimistic": {
+      "mean": 0.724,
+      "std": 0.06,
+      "min": 0.6,
+      "max": 0.85
+    },
+    "optimism_gap": 0.076,
+    "clinical_ops_terms_chosen_in": "25/25 splits",
+    "weights_chosen_thesis_stage_ticket_geo": {
+      "0.45/0.25/0.20/0.10": 7,
+      "0.50/0.25/0.15/0.10": 6,
+      "0.50/0.20/0.20/0.10": 5,
+      "0.50/0.20/0.15/0.15": 4,
+      "0.45/0.20/0.20/0.15": 1,
+      "0.45/0.25/0.15/0.15": 1,
+      "0.40/0.25/0.20/0.15": 1
+    }
+  },
+  "noise_ceiling": {
+    "analyst_noise_free_vs_shortlist": 0.75,
+    "analyst_rerun_vs_shortlist": {
+      "mean": 0.693,
+      "std": 0.037,
+      "min": 0.6,
+      "max": 0.775
+    }
+  },
+  "grid_size": 3024
+}

@@ -1,12 +1,9 @@
 """
-Investor Intelligence Engine - Streamlit dashboard.
+Investor Intelligence Engine - Streamlit dashboard (local exploration).
 
-Run the pipeline first (or use the included sample output):
-  python src/generate_dataset.py
-  python src/make_shortlist.py
-  python src/scoring.py
-  python src/evaluate.py
-  python src/outreach.py --top 20
+The public live demo is the static site in site/ (never sleeps); this app reads the
+same outputs. Run the pipeline first (or use the included output):
+  python run_all.py
 
 Then:  streamlit run app.py
 """
@@ -122,13 +119,17 @@ def load(data_version: float = 0.0):
         if (OUTPUT / "evaluation_report.json").exists() else None
     drafts_path = OUTPUT / "outreach_drafts.csv"
     drafts = pd.read_csv(drafts_path) if drafts_path.exists() else None
-    return scored, manual, startup, report, drafts
+    tuning = json.loads((OUTPUT / "tuning_report.json").read_text(encoding="utf-8")) \
+        if (OUTPUT / "tuning_report.json").exists() else None
+    llm_cmp = json.loads((OUTPUT / "llm_vs_rubric.json").read_text(encoding="utf-8")) \
+        if (OUTPUT / "llm_vs_rubric.json").exists() else None
+    return scored, manual, startup, report, drafts, tuning, llm_cmp
 
 
 try:
     data_version = max((p.stat().st_mtime for p in OUTPUT.glob("*") if p.is_file()),
                        default=0.0)
-    scored, manual, startup, report, drafts = load(data_version)
+    scored, manual, startup, report, drafts, tuning, llm_cmp = load(data_version)
 except FileNotFoundError:
     st.error("Run the pipeline first - see README (python src/scoring.py etc.)")
     st.stop()
@@ -143,7 +144,7 @@ st.markdown(f"""
     <span class="chip">💶 Round: EUR {startup['round_size_eur']:,} ({startup['stage']})</span>
     <span class="chip">🌍 DACH-first, Europe-wide</span>
     <span class="chip">🤖 LLM scoring · 4-dimension rubric</span>
-    <span class="chip">✅ Validated vs human shortlist</span>
+    <span class="chip">✅ Held-out evaluation</span>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -154,7 +155,7 @@ geo = st.sidebar.multiselect("Geography focus", sorted(scored["geography_focus"]
 itype = st.sidebar.multiselect("Investor type", sorted(scored["type"].unique()))
 country = st.sidebar.multiselect("HQ country", sorted(scored["hq_country"].unique()))
 min_score = st.sidebar.slider("Min total score", 0, 100, 0, 5)
-only_shortlist = st.sidebar.checkbox("Only human-shortlisted (ground truth)")
+only_shortlist = st.sidebar.checkbox("Only analyst picks (simulated ground truth)")
 st.sidebar.markdown("---")
 st.sidebar.caption("**Scoring rubric (v2)** — thesis fit 45% · stage 25% · "
                    "ticket 20% · geography 10%")
@@ -178,10 +179,12 @@ c1, c2, c3, c4 = st.columns(4)
 c1.metric("🗂️ Investors screened", f"{len(scored):,}")
 c2.metric("🔎 Matching filters", f"{len(df):,}")
 c3.metric("📈 Avg score (filtered)", f"{df['total_score'].mean():.1f}" if len(df) else "—")
-if report:
-    c4.metric("🎯 Model vs human overlap",
-              f"{report['model_top40_vs_human_top40_overlap']}/40",
-              f"precision@40 = {report['precision_at_40']:.0%}", delta_color="off")
+if tuning:
+    c4.metric("🎯 Held-out precision",
+              f"{tuning['held_out']['tuned_on_A_scored_on_B']['mean']:.0%}",
+              f"analyst noise ceiling ≈ "
+              f"{tuning['noise_ceiling']['analyst_rerun_vs_shortlist']['mean']:.0%}",
+              delta_color="off")
 
 st.write("")
 
@@ -200,7 +203,7 @@ with tab_pipe:
           <span class="medal">{medal}</span>
           <div class="name">{r['name']}</div>
           <div class="meta">{r['type']} · {r['hq_country']} · {r['geography_focus']}
-          {'· ✅ human pick' if r['in_manual_shortlist'] else ''}</div>
+          {'· ✅ analyst pick' if r['in_manual_shortlist'] else ''}</div>
           <div class="score">{r['total_score']:.1f} <small>/ 100</small></div>
         </div>""", unsafe_allow_html=True)
 
@@ -224,7 +227,7 @@ with tab_pipe:
                          "stage_fit": st.column_config.NumberColumn("Stage", width="small"),
                          "ticket_fit": st.column_config.NumberColumn("Ticket", width="small"),
                          "geo_fit": st.column_config.NumberColumn("Geo", width="small"),
-                         "in_manual_shortlist": st.column_config.CheckboxColumn("Human pick"),
+                         "in_manual_shortlist": st.column_config.CheckboxColumn("Analyst pick"),
                      })
         st.download_button("⬇️ Download filtered pipeline (CSV)",
                            show.to_csv(index=False), "investor_pipeline.csv")
@@ -273,7 +276,7 @@ with tab_detail:
         st.markdown(f"**Thesis:** _{row['thesis']}_")
         st.markdown(f"**Portfolio:** {row['portfolio_examples']}")
         if row["in_manual_shortlist"]:
-            st.success("✅ Also picked by the human analyst (ground truth)")
+            st.success("✅ Also picked by the simulated analyst (ground truth)")
         if isinstance(row.get("rationale"), str) and row["rationale"]:
             st.info(f"Model rationale: {row['rationale']}")
     with b:
@@ -299,24 +302,67 @@ with tab_detail:
 
 # ---------------------------------------------------------------- evaluation
 with tab_eval:
-    st.markdown("#### Model ranking vs human analyst shortlist")
-    st.caption("The human 40-investor shortlist (built during the live fundraise) "
-               "is the ground truth. These metrics say how closely the model's "
-               "ranking reproduces experienced human judgment.")
-    if not report:
-        st.warning("Run `python src/evaluate.py` to generate the evaluation report.")
+    st.markdown("#### Model ranking vs a simulated analyst shortlist")
+    st.caption("Ground truth = a simulated analyst's 40-investor shortlist (heuristic screen "
+               "+ gut-feel noise). The real fundraise pipeline is client-confidential and "
+               "lives on a different universe, so it can't be the benchmark here.")
+    if not report or not tuning:
+        st.warning("Run `python run_all.py` to generate the evaluation reports.")
     else:
-        e1, e2, e3 = st.columns(3)
-        e1.metric("Precision@40", f"{report['precision_at_40']:.0%}",
-                  f"{report['model_top40_vs_human_top40_overlap']}/40 overlap",
+        ho, ins, ceil = tuning["held_out"], tuning["in_sample"], tuning["noise_ceiling"]
+        lo, hi = report["precision_at_40_ci95"]
+        e1, e2, e3, e4 = st.columns(4)
+        e1.metric("Held-out precision", f"{ho['tuned_on_A_scored_on_B']['mean']:.0%}",
+                  f"± {ho['tuned_on_A_scored_on_B']['std']:.0%} over {ho['n_splits']} splits",
                   delta_color="off")
-        e2.metric("Recall@80", f"{report['recall_at_80']:.0%}",
-                  "human picks found in model top-80", delta_color="off")
-        e3.metric("Mean model rank of human picks",
-                  f"{report['mean_model_rank_of_human_picks']:.0f}")
+        e2.metric("In-sample precision@40", f"{report['precision_at_40']:.0%}",
+                  f"95% CI {lo:.0%}–{hi:.0%}", delta_color="off")
+        e3.metric("Analyst noise ceiling",
+                  f"{ceil['analyst_rerun_vs_shortlist']['mean']:.0%}",
+                  "same analyst, re-run", delta_color="off")
+        e4.metric("ROC-AUC (all 520)", f"{report['roc_auc']:.2f}",
+                  f"recall@80 = {report['recall_at_80']:.0%}", delta_color="off")
 
         st.write("")
-        st.markdown("**Where does the model place each human pick?**")
+        st.markdown("**Why the in-sample number overstates the model**")
+        bars = pd.DataFrame([
+            ("v1 rubric · in-sample", ins["v1_precision_at_40"], "In-sample"),
+            ("v2 rubric · in-sample", ins["v2_precision_at_40"], "In-sample"),
+            ("Best of grid · in-sample", ins["best_grid_precision_at_40"], "In-sample"),
+            ("v1 rubric · held-out", ho["v1_hand_set_on_B"]["mean"], "Held-out"),
+            ("Tuned rubric · held-out", ho["tuned_on_A_scored_on_B"]["mean"], "Held-out"),
+        ], columns=["label", "precision", "kind"])
+        fig = go.Figure()
+        for kind, color in [("In-sample", "#c3c2b7"), ("Held-out", BLUE)]:
+            sub = bars[bars["kind"] == kind]
+            fig.add_trace(go.Bar(
+                x=sub["precision"], y=sub["label"], orientation="h", name=kind,
+                marker=dict(color=color, cornerradius=4), width=0.6,
+                text=[f"{v:.0%}" for v in sub["precision"]], textposition="outside",
+                textfont=dict(color=INK_2),
+                hovertemplate="%{y}: %{x:.0%}<extra></extra>"))
+        ceiling_v = ceil["analyst_rerun_vs_shortlist"]["mean"]
+        fig.add_vline(x=ceiling_v, line_dash="dash", line_color=MUTED,
+                      annotation_text=f"noise ceiling {ceiling_v:.0%}",
+                      annotation_font_color=MUTED, annotation_position="top")
+        fig.update_layout(**PLOTLY_LAYOUT, height=270, margin=dict(t=30, b=10, l=10, r=40),
+                          xaxis_range=[0.4, 0.88], xaxis_tickformat=".0%",
+                          xaxis_title="Precision (share of model top-k the analyst also picked)",
+                          legend=dict(title="", orientation="h", y=1.18), barmode="overlay")
+        fig.update_yaxes(autorange="reversed")
+        st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+        st.caption(
+            f"Tuning on the same shortlist you score on looks like a "
+            f"{ins['best_grid_precision_at_40'] - ins['v1_precision_at_40']:+.0%} gain. "
+            f"On unseen halves the tuned rubric beats hand-set v1 by only "
+            f"{ho['tuned_on_A_scored_on_B']['mean'] - ho['v1_hand_set_on_B']['mean']:+.0%}, "
+            f"and the optimism gap is {ho['optimism_gap']:+.0%}. One change was robust: "
+            f"counting clinical-operations language toward thesis fit "
+            f"(chosen in {ho['clinical_ops_terms_chosen_in']}). The weight shifts were mostly "
+            f"noise. Held-out precision already sits at the analyst's own re-run agreement.")
+
+        st.write("")
+        st.markdown("**Where does the model place each analyst pick?**")
         ranks = scored.set_index("investor_id")["rank"]
         mm = manual.copy()
         mm["model_rank"] = mm["investor_id"].map(ranks)
@@ -331,33 +377,58 @@ with tab_eval:
                       annotation_font_color=MUTED)
         fig.update_layout(**PLOTLY_LAYOUT, height=190,
                           margin=dict(t=10, b=30, l=10, r=10),
-                          xaxis_title="Model rank of human-picked investor")
+                          xaxis_title="Model rank of analyst-picked investor")
         fig.update_yaxes(visible=False)
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
         if report["human_picks_missed_by_model_top80"]:
-            with st.expander(f"Human picks the model missed entirely "
+            with st.expander(f"Analyst picks the model missed entirely "
                              f"({len(report['human_picks_missed_by_model_top80'])})"):
                 for n in report["human_picks_missed_by_model_top80"]:
                     st.markdown(f"- {n}")
-        st.info("**Key learning:** without this ground-truth comparison, the model's "
-                "rankings would look plausible but be unverifiable. Evaluation "
-                "against the human pipeline is what made iteration possible — and "
-                "disagreement analysis surfaced investors the manual screen had missed.")
+        st.info("**Key learning:** a number measured on the data you tuned on is a claim, "
+                "not a result. Held-out splits cut the apparent gain from tuning to almost "
+                "nothing, and re-running the analyst showed the label noise caps agreement "
+                "near 70%. Past that point, more tuning just fits the analyst's gut feel.")
+
+    st.write("")
+    st.markdown("#### 🤖 LLM vs rubric (same investors)")
+    if not llm_cmp:
+        st.info("No LLM run yet. With a free Gemini key: `python src/scoring.py --mode llm "
+                "--sample 60` then `python src/compare.py` (or double-click RUN-LLM.bat). "
+                "The sample is 30 analyst picks + 30 others, so both scorers face the same "
+                "test.")
+    else:
+        auc = llm_cmp["auc_vs_analyst"]
+        l1, l2, l3 = st.columns(3)
+        l1.metric("Investors compared", llm_cmp["n_compared"],
+                  f"{llm_cmp['n_analyst_picks']} analyst picks", delta_color="off")
+        l2.metric("Rank agreement (Spearman)", f"{llm_cmp['spearman_total']:.2f}")
+        l3.metric("AUC vs analyst: LLM | rubric", f"{auc['llm']:.2f} | {auc['rubric']:.2f}")
+        dim_tbl = pd.DataFrame({
+            "Dimension": list(llm_cmp["spearman_by_dimension"]),
+            "Spearman": list(llm_cmp["spearman_by_dimension"].values()),
+            "Mean |diff| (pts)": list(llm_cmp["mean_abs_diff_by_dimension"].values())})
+        st.dataframe(dim_tbl, hide_index=True)
+        st.markdown("**Biggest disagreements**")
+        st.dataframe(pd.DataFrame(llm_cmp["biggest_disagreements"]), hide_index=True,
+                     column_config={"analyst_pick": st.column_config.CheckboxColumn("Analyst pick")})
 
 # ------------------------------------------------------------------ outreach
 with tab_outreach:
     st.markdown("#### Auto-drafted personalized outreach")
-    st.caption("Each draft is grounded in the investor's actual thesis and portfolio "
-               "from the dataset — no invented facts. Drafts are reviewed by a human "
-               "before anything is sent.")
+    st.caption("Each draft is built from the investor's actual thesis and portfolio "
+               "in the dataset; LLM drafts are automatically checked for citing a real "
+               "portfolio company. A human reviews every draft before anything is sent.")
     if drafts is None:
         st.warning("Run `python src/outreach.py --top 20` to generate drafts.")
     else:
         who = st.selectbox("Draft for", drafts["name"])
         d = drafts[drafts["name"] == who].iloc[0]
         st.markdown(f"**To:** {d['contact_email']} &nbsp;|&nbsp; "
-                    f"**Fit score:** {d['total_score']}")
+                    f"**Fit score:** {d['total_score']} &nbsp;|&nbsp; "
+                    f"**Source:** {d.get('draft_source', 'template')} &nbsp;|&nbsp; "
+                    f"{'✅ cites a real portfolio company' if d.get('grounded', True) else '⚠️ not grounded — review'}")
         st.markdown(f"**Subject:** {d['subject']}")
         st.text_area("Body", d["body"], height=280, label_visibility="collapsed")
         st.download_button("⬇️ Download all drafts (CSV)",
@@ -378,9 +449,9 @@ investors.csv (520 profiles)
 └─────────────────────┘                 │
    thesis 45% · stage 25%               ▼
    ticket 20% · geo 10%      ┌───────────────────────┐
-                             │ Evaluation vs human   │
-                             │ 40-investor shortlist │
-                             │ precision@40 · recall │
+                             │ Evaluation vs analyst │
+                             │ held-out splits +     │
+                             │ noise ceiling         │
                              └──────────┬────────────┘
                                         ▼
                              ┌───────────────────────┐
@@ -393,16 +464,17 @@ investors.csv (520 profiles)
 - **Scoring** — every investor is scored 0–100 on a 4-dimension weighted rubric via
   LLM structured-JSON calls (Gemini free tier or Claude; provider-agnostic), with a
   deterministic offline rubric as the no-API-key fallback.
-- **Evaluation** — the model's top-40 is benchmarked against a human analyst's
-  shortlist from a live €1.5M MedTech fundraise. The v1 rubric hit 68% precision@40;
-  disagreement analysis drove a v2 rubric that lifted it to **precision@40 = {p:.0%},
-  recall@80 = {r:.0%}**.
+- **Evaluation** — the model's ranking is benchmarked against a simulated analyst's
+  40-investor shortlist. Rubric parameters are tuned on one half of the data and scored
+  on the other (25 repeated splits): held-out precision **{h:.0%}**, against an analyst
+  noise ceiling of **{c:.0%}**.
+- **LLM vs rubric** — the same investors scored both ways and compared on rank
+  agreement and AUC; LLM responses are cached so free-tier runs resume across days.
 - **Outreach** — personalized intro drafts grounded in each investor's actual thesis
-  text (grounding is the hallucination fix: the model cites facts it was given, not
-  facts it remembers).
-- **Human in the loop** — the pipeline compresses ~2 weeks of screening into minutes,
-  but the final shortlist call and every sent email stay human decisions.
-""".format(p=report["precision_at_40"] if report else 0,
-           r=report["recall_at_80"] if report else 0))
-    st.caption("Dataset note: fictional firm names modeled on the real screening "
-               "universe — the actual investor tracker is client-confidential.")
+  text, with an automatic check that each draft cites a portfolio company it was given.
+- **Human in the loop** — the pipeline screens 520 investors in seconds (rubric) or
+  minutes (LLM), but the final shortlist call and every sent email stay human decisions.
+""".format(h=tuning["held_out"]["tuned_on_A_scored_on_B"]["mean"] if tuning else 0,
+           c=tuning["noise_ceiling"]["analyst_rerun_vs_shortlist"]["mean"] if tuning else 0))
+    st.caption("Dataset note: synthetic universe with fictional firm names, shaped like "
+               "a real DACH MedTech seed screen. The actual tracker is client-confidential.")

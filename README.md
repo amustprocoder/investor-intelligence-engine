@@ -1,127 +1,211 @@
 # 📊 Investor Intelligence Engine
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-dashboard-FF4B4B?logo=streamlit&logoColor=white)
 ![LLM](https://img.shields.io/badge/LLM-Gemini%20%7C%20Claude-8A2BE2)
-![Eval](https://img.shields.io/badge/precision%4040-75%25-success)
+![Held-out precision](https://img.shields.io/badge/held--out%20precision-68%25-success)
+![Tests](https://img.shields.io/badge/tests-pytest-informational)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-![Dashboard](docs/dashboard.jpg)
+**Live demo:** https://investor-intelligence-engine-omrana.netlify.app · static site, loads instantly, no sign-up
 
-An AI-powered investor-screening pipeline that automates what I previously did manually
-during a live **€1.5M MedTech seed fundraise** (DACH/Europe): screen hundreds of VCs,
-angels and family offices, rank them on thesis fit, and prepare personalized outreach.
+![Investor Finder](docs/dashboard.jpg)
 
-Manual screening of ~200 investors took the better part of two weeks. This pipeline
-screens **500+ investors in under 30 minutes**, and — critically — its output is
-**validated against the human-built 40-investor shortlist** from the real fundraise.
+**Investor Finder** helps HealthTech and MedTech founders in Europe answer the first
+fundraising question: *who should I email first?* Pick what you build, your stage, how much
+you're raising and where you are; it ranks **88 verified European health investors** on four
+plain questions and writes a ready-to-send email for each.
 
-## What it does
+| | |
+|---|---|
+| **Field** (40%) | Do they back your area? Health specialists score higher than generalists. |
+| **Stage** (25%) | Do they invest at your stage? Adjacent stage = half credit. |
+| **Cheque** (20%) | Does their usual ticket fit inside your round? |
+| **Location** (15%) | Local first, then Europe; regional-only funds are flagged. |
+
+![Finder](docs/finder.jpg)
+
+**What a founder can do with it**
+
+- **Find:** ranked list with a match %, and a ✓ / – / ✗ reason for each of the four questions.
+- **Write:** a ready email per investor, built only from the data; one click opens it in
+  their email app. Optional **✦ Personalize with AI** rewrites it with Gemini.
+- **Let AI fill the form:** paste a description or a website link and Gemini fills in
+  field, stage, round size, country, name and pitch.
+- **Track:** save investors to a pipeline board (To contact → Emailed → Replied → Meeting
+  → Passed) with follow-up dates, overdue badges, notes and CSV export. Opening an email
+  moves the investor to *Emailed* with a follow-up in 7 days.
+
+AI features are bring-your-own-key: the visitor pastes a free Gemini key
+(aistudio.google.com/apikey), which stays in their browser and is sent only to Google's
+API. Without a key everything else works. The pipeline lives in the browser's local
+storage; nothing is sent to a server.
+
+### The investor data
+
+`data/european_health_investors.csv` (also `site/investors.js`): 88 VC funds, angel networks,
+family offices, corporate and public funds investing in European health startups, compiled
+from hands-on research for a real seed raise.
+
+- **Every website was opened and checked live** (23 Oct 2026); unreachable or unconfirmed
+  firms were removed (96 → 88).
+- **Firm-level public information only:** name, type, country, stages, typical ticket,
+  focus, website, generic inbox (info@/office@…). No individuals, no personal emails.
+- Public mandates are recorded (e.g. "companies with a Berlin presence") so the finder
+  can flag funds a founder can't actually raise from.
+
+### Behind it: an evaluated scoring method
+
+The four-question rubric was first built and evaluated offline on a 520-profile practice
+universe with a simulated expert shortlist. That pipeline (Python, below) is what the
+evaluation numbers come from; the live finder uses the same four questions and the
+hand-set weights, which held out within one point of the tuned ones.
+
+## Results
+
+| | Value |
+|---|---|
+| Investors screened | 520 (synthetic universe, fictional names) |
+| **Held-out precision** (tuned on half A, scored on unseen half B, 25 splits) | **68% ± 6%** |
+| Analyst noise ceiling (same analyst re-run with fresh noise) | 69% (range 60–78%) |
+| In-sample precision@40 (v2 rubric) | 72.5% (95% CI 57–84%) |
+| ROC-AUC, analyst picks vs non-picks | 0.96 |
+| Recall@80 | 85% |
+
+What the evaluation showed:
+
+- **In-sample tuning overstated the gain.** A 3,024-config sweep looks like 65% → 75%
+  when you tune and score on the same shortlist. On held-out halves the tuned rubric
+  reaches 68%, against 67% for the hand-set v1 weights: about one point, with an
+  8-point optimism gap.
+- **One change was real.** Counting clinical-operations language (hospital pilots,
+  MDR, reimbursement) toward thesis fit was chosen in 25 of 25 splits. The weight
+  shifts were mostly noise.
+- **The model is at the noise ceiling.** The analyst agrees with their own re-run only
+  69% of the time, so pushing past ~70% would mean fitting gut feel, not signal.
+- **Ties matter.** Four investors share the score at the top-40 cutoff, so precision@40
+  can land anywhere from 72.5% to 75% depending on tie-breaking. Ranking is now stable
+  and deterministic.
+
+## Pipeline
 
 ```
-investors.csv (520 profiles)
-        │
-        ▼
-┌─────────────────────┐     ┌──────────────────────┐
-│  Scoring engine     │────▶│  Ranked pipeline      │
-│  LLM (Claude) or    │     │  0–100 weighted score │
-│  offline rubric     │     └──────────┬───────────┘
-└─────────────────────┘                │
-        weights (v2):                  ▼
-        thesis 45%          ┌──────────────────────┐
-        stage  25%          │ Evaluation vs human  │
-        ticket 20%          │ 40-investor shortlist│
-        geo    10%          │ precision@40, recall │
-                            └──────────┬───────────┘
-                                       ▼
-                            ┌──────────────────────┐
-                            │ Outreach generator   │
-                            │ + Streamlit dashboard│
-                            └──────────────────────┘
+investors.csv (520) ──▶ scoring (rubric | LLM) ──▶ ranked pipeline
+                                                        │
+analyst shortlist (40, simulated) ──▶ evaluation ◀──────┘
+                                       • precision / recall / AUC
+                                       • held-out splits + noise ceiling
+                                       • LLM vs rubric on the same investors
+                                                        │
+                                   outreach drafts ◀────┘──▶ static dashboard (site/)
 ```
 
-1. **Dataset** — 520 investor profiles (VCs, angels, family offices, CVCs) with thesis,
-   stage focus, ticket size, geography and portfolio. Synthetic but modeled on the real
-   screening universe of the fundraise (fictional names; the real tracker is confidential).
-2. **Scoring engine** — each investor is scored 0–100 on a 4-dimension weighted rubric:
-   thesis fit (45%), stage fit (25%), ticket fit (20%), geography fit (10%).
-   Two modes: `--mode llm` uses an LLM (Gemini free tier or Claude) with structured
-   JSON output; the default demo mode uses a deterministic offline rubric so the
-   repo runs with no API key.
-3. **Evaluation** — the model's top-40 is compared against a human analyst's
-   40-investor shortlist (ground truth). The v1 rubric scored **68%** precision@40;
-   disagreement analysis (which investors did the human pick that the model missed,
-   and why) drove a v2 rubric — clinical-operations language now counts toward
-   thesis fit, and weights shifted from 40/25/20/15 to 45/25/20/10 — lifting it to
-   **precision@40 = 75%, recall@80 = 85%**.
-4. **Outreach generator** — drafts a personalized intro email for each top investor,
-   grounded in their actual thesis and portfolio (no invented facts).
-5. **Dashboard** — Streamlit app with the ranked pipeline, per-investor score
-   breakdowns, the model-vs-human evaluation view, and outreach drafts.
-
-![Evaluation view](docs/evaluation.jpg)
+1. **Dataset:** 520 investor profiles with thesis, stage focus, ticket size, geography
+   and portfolio. Synthetic, shaped like a real DACH MedTech seed screen.
+2. **Simulated analyst shortlist:** 40 picks from a heuristic screen plus random
+   "gut-feel" noise. The real fundraise pipeline is client-confidential and lives on
+   a different universe, so the ground truth is simulated, and its noise is measurable.
+3. **Scoring:** 0–100 on a 4-dimension weighted rubric: thesis 45%, stage 25%,
+   ticket 20%, geography 10%. Offline rubric by default; `--mode llm` asks Gemini
+   (free tier) or Claude for the same four scores in strict JSON.
+4. **Evaluation:** precision@40 with a Wilson interval, recall@80, ROC-AUC, then
+   held-out tuning over 25 stratified splits and a noise ceiling from 50 analyst re-runs.
+5. **LLM vs rubric:** a stratified sample (30 analyst picks + 30 others) scored both
+   ways; Spearman agreement per dimension, AUC of each scorer, biggest disagreements.
+6. **Outreach:** a personalized draft per top investor, with an automatic check that
+   each draft cites a portfolio company it was actually given.
+7. **Site:** the evaluation summary is exported to `site/proof.js` for the Investor Finder.
 
 ## Quickstart
 
 ```bash
 pip install -r requirements.txt
-
-python src/generate_dataset.py     # build the 520-investor universe
-python src/make_shortlist.py       # build the human ground-truth shortlist
-python src/scoring.py              # score all investors (offline demo mode)
-python src/evaluate.py             # compare model top-40 vs human top-40
-python src/outreach.py --top 20    # draft outreach emails
-python src/tune_rubric.py          # (optional) re-run the rubric parameter sweep
-
-streamlit run app.py               # open the dashboard
+python run_all.py            # whole offline pipeline, no API key, ~10 s
 ```
 
-### Real LLM mode (free)
+Then open `site/index.html` in a browser for the Investor Finder, or explore the
+evaluation pipeline locally with `streamlit run app.py`.
 
-Get a free Gemini API key at https://aistudio.google.com/apikey (no card required):
+### LLM mode (free)
+
+Get a free Gemini key at https://aistudio.google.com/apikey, then:
 
 ```bash
-set GEMINI_API_KEY=your-key                  # macOS/Linux: export GEMINI_API_KEY=...
-python src/scoring.py --mode llm --limit 25  # quick test run
-python src/scoring.py --mode llm             # full run (free tier, rate-limited ~35 min)
-python src/outreach.py --top 20 --mode llm
-python src/evaluate.py                       # re-evaluate against the human shortlist
+set GEMINI_API_KEY=your-key                     # macOS/Linux: export GEMINI_API_KEY=...
+python src/scoring.py --mode llm --sample 60    # 30 analyst picks + 30 others
+python src/compare.py                           # LLM vs rubric
+python run_all.py                               # refresh reports + dashboard
 ```
 
-Claude is also supported (`--provider claude` with `ANTHROPIC_API_KEY`); the scoring
-prompt and rubric are provider-agnostic.
+On Windows, `RUN-LLM.bat` does the same with prompts.
 
-## Key learnings (the short version)
+- Every response is cached in `output/llm_cache.jsonl`. If the free tier's daily quota
+  runs out, the run stops cleanly; the same command the next day resumes where it stopped.
+- LLM results go to `output/scored_investors_llm.csv`, never over the rubric pipeline.
+  Each row records `score_source = llm | rubric_fallback`, so a failed call can't pass
+  silently as an LLM score.
+- A bad key or retired model aborts at once with a clear message. Override the model
+  with `--model` or `GEMINI_MODEL`; `--provider claude` uses `ANTHROPIC_API_KEY`.
 
-- **LLMs need rubrics, not vibes.** "Is this investor a fit?" gave inconsistent
-  scores; four weighted, defined dimensions with strict JSON output made them reproducible.
-- **Ground truth beats intuition.** Only the comparison against the human shortlist
-  revealed where the model disagreed with an experienced screen — without it, the
-  rankings would look plausible but be unverifiable. Disagreement analysis then
-  drove the rubric from 68% to 75% agreement.
-- **Hallucination is a data problem.** Grounding the prompt in the investor's actual
-  thesis text (instead of relying on model memory) is what keeps outreach drafts factual.
-- **Automate the screen, keep the judgment.** The pipeline compresses 2 weeks of
-  screening into minutes, but the final shortlist call stays human.
+### Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+```
+
+CI (`.github/workflows/ci.yml`) runs the tests and the full offline pipeline on every push.
+
+## Deploy the Investor Finder
+
+`site/` is plain HTML/CSS/JS (data in `site/investors.js` and `site/proof.js`), so any
+static host works and it never "sleeps" the way a free Streamlit Cloud app does:
+
+- **Netlify:** drag the `site` folder onto https://app.netlify.com/drop.
+- **GitHub Pages:** Settings → Pages → deploy from branch, folder `/site`.
+
+Scoring, filtering, CSV export and email drafts all run in the visitor's browser;
+nothing is sent to a server.
+
+## Key learnings
+
+- **A number measured on the data you tuned on is a claim, not a result.** Held-out
+  splits turned an apparent 10-point gain into one point.
+- **Know your ceiling.** Measuring how often the analyst agrees with themselves showed
+  where more tuning stops helping.
+- **LLMs need rubrics, not vibes.** Four defined dimensions, anchors and strict JSON make
+  scores comparable across 500 calls and across providers.
+- **Fail loudly.** The first LLM attempt silently fell back to the rubric on every row
+  and overwrote the full pipeline. Now every row is labelled with its source, partial
+  runs write to their own file, and fatal errors stop the run.
+- **Automate the screen, keep the judgment.** The pipeline ranks and drafts; the
+  shortlist call and every sent email stay human.
 
 ## Project structure
 
 ```
-├── app.py                  # Streamlit dashboard
+├── run_all.py               # one command: whole offline pipeline
+├── app.py                   # Streamlit dashboard (local)
+├── site/                    # Investor Finder (deploy this)
 ├── data/
-│   ├── investors.csv       # 520-investor universe
-│   ├── manual_shortlist.csv# human ground truth (40 investors)
-│   └── startup_profile.json# the (anonymized) startup being matched
+│   ├── european_health_investors.csv  # 88 verified real investors
+│   ├── investors.csv        # 520-profile practice universe (synthetic)
+│   ├── manual_shortlist.csv # simulated analyst shortlist (40)
+│   └── startup_profile.json # the anonymized startup being matched
 ├── src/
 │   ├── generate_dataset.py
-│   ├── make_shortlist.py
-│   ├── scoring.py          # LLM / rubric scoring engine
-│   ├── evaluate.py         # precision@40, recall@80 vs human picks
-│   ├── tune_rubric.py      # parameter sweep that produced the v2 rubric
-│   └── outreach.py         # personalized email drafts
-└── output/                 # scored pipeline, eval report, drafts
+│   ├── make_shortlist.py    # simulated analyst (heuristic + noise)
+│   ├── scoring.py           # rubric + LLM scoring engine
+│   ├── llm.py               # Gemini/Claude client: cache, pacing, typed errors
+│   ├── evaluate.py          # precision@40, recall@80, AUC
+│   ├── tune_rubric.py       # held-out tuning + noise ceiling
+│   ├── compare.py           # LLM vs rubric
+│   ├── outreach.py          # grounded email drafts
+│   ├── metrics.py
+│   └── export_site.py       # evaluation summary -> site/proof.js
+├── tests/
+└── output/                  # scored pipeline, reports, drafts
 ```
 
 ---
-*Built by Om Rana — NIT Rourkela '25. Based on investor-screening work for a live
-European MedTech fundraise (client details anonymized).*
+*Built by Om Rana, NIT Rourkela '25. Based on investor-screening work for a live
+European MedTech fundraise (client details anonymized; all data here is synthetic).*

@@ -3,23 +3,25 @@ Outreach generator: drafts a personalized 4-line intro email for each
 top-ranked investor, citing their thesis and portfolio.
 
 Modes:
-  - demo (default): template-based drafts, offline.
+  - template (default): template-based drafts, offline.
   - llm: an LLM writes each draft grounded in the investor's actual thesis text.
     Providers: --provider gemini (free key, GEMINI_API_KEY) or
-    --provider claude (ANTHROPIC_API_KEY).
+    --provider claude (ANTHROPIC_API_KEY). Responses are cached like scoring.
+
+Every draft records draft_source = template | llm | template_fallback, and LLM
+drafts are checked for grounding: a draft that names none of the investor's
+listed portfolio companies is flagged (grounded = False) for human review.
 
 Usage:
   python src/outreach.py --top 20
-  python src/outreach.py --top 20 --mode llm                     # free Gemini
-  python src/outreach.py --top 20 --mode llm --provider claude
+  python src/outreach.py --top 10 --mode llm                     # free Gemini
+  python src/outreach.py --top 10 --mode llm --provider claude
 
 Output: output/outreach_drafts.csv
 """
 
 import argparse
 import json
-import os
-import time
 from pathlib import Path
 
 import pandas as pd
@@ -37,16 +39,14 @@ We are raising a EUR 1.5M seed round with tickets from EUR 250K, and your {stage
 Best regards,
 {sender}"""
 
-LLM_PROMPT = """Write a 4-sentence cold outreach email to this investor for the startup below.
-Rules: reference their SPECIFIC thesis and one portfolio company from the data given;
-do not invent any facts; professional, no hype words; end with a soft ask for a call.
-Return JSON: {"subject": "...", "body": "..."}
-
-INVESTOR: %s
-STARTUP: %s"""
+LLM_SYSTEM = """You write concise, factual cold outreach emails from a startup to an investor.
+Rules: reference the investor's SPECIFIC thesis and exactly one portfolio company from the
+data given; do not invent any facts about the investor or the startup; professional tone,
+no hype words; 4 sentences; end with a soft ask for a call.
+Return JSON: {"subject": "...", "body": "..."}"""
 
 
-def demo_draft(row: pd.Series, startup: dict, sender: str) -> dict:
+def template_draft(row: pd.Series, startup: dict, sender: str) -> dict:
     first_sector = str(row["sectors"]).split(";")[0].strip()
     first_stage = str(row["stage_focus"]).split(";")[0].strip()
     portfolio = str(row["portfolio_examples"]).split(",")[0].strip()
@@ -66,44 +66,20 @@ def investor_blob(row: pd.Series) -> str:
                 "stage_focus", "geography_focus"]].to_json()
 
 
-def claude_draft(client, model: str, row: pd.Series, startup: dict) -> dict:
-    msg = client.messages.create(
-        model=model, max_tokens=500,
-        messages=[{"role": "user",
-                   "content": LLM_PROMPT % (investor_blob(row), json.dumps(startup))}],
-    )
-    text = msg.content[0].text.strip()
-    return json.loads(text[text.find("{"):text.rfind("}") + 1])
-
-
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-
-
-def gemini_draft(model: str, row: pd.Series, startup: dict) -> dict:
-    import requests
-    body = {"contents": [{"parts": [{"text":
-            LLM_PROMPT % (investor_blob(row), json.dumps(startup))}]}],
-            "generationConfig": {"responseMimeType": "application/json"}}
-    headers = {"x-goog-api-key": os.environ["GEMINI_API_KEY"],
-               "Content-Type": "application/json"}
-    for attempt in range(3):
-        resp = requests.post(GEMINI_URL.format(model=model), json=body,
-                             headers=headers, timeout=60)
-        if resp.status_code == 429:
-            time.sleep(25)
-            continue
-        resp.raise_for_status()
-        text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-        return json.loads(text[text.find("{"):text.rfind("}") + 1])
-    raise RuntimeError("Gemini rate limit: 3 attempts failed")
+def is_grounded(body: str, row: pd.Series) -> bool:
+    """Cheap hallucination check: the draft must cite a portfolio company we actually gave it."""
+    portfolio = [p.strip() for p in str(row["portfolio_examples"]).split(",") if p.strip()]
+    return any(p.lower() in body.lower() for p in portfolio)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--top", type=int, default=20)
-    parser.add_argument("--mode", choices=["demo", "llm"], default="demo")
+    parser.add_argument("--mode", choices=["template", "demo", "llm"], default="template",
+                        help="'demo' is kept as an alias of 'template'")
     parser.add_argument("--provider", choices=["gemini", "claude"], default="gemini")
     parser.add_argument("--model", default=None)
+    parser.add_argument("--rpm", type=float, default=6)
     parser.add_argument("--sender", default="Om Rana")
     args = parser.parse_args()
 
@@ -113,38 +89,45 @@ def main() -> None:
 
     client = None
     if args.mode == "llm":
-        if args.provider == "claude":
-            if not os.environ.get("ANTHROPIC_API_KEY"):
-                raise SystemExit("Set ANTHROPIC_API_KEY for --provider claude, or use --provider gemini (free).")
-            import anthropic
-            client = anthropic.Anthropic()
-            model = args.model or "claude-haiku-4-5-20251001"
-        else:
-            if not os.environ.get("GEMINI_API_KEY"):
-                raise SystemExit("Set GEMINI_API_KEY (free key: https://aistudio.google.com/apikey), or run demo mode.")
-            model = args.model or "gemini-2.0-flash"
+        from llm import FatalLLMError, LLMClient, QuotaExhausted
+        try:
+            client = LLMClient(args.provider, args.model,
+                               cache_path=ROOT / "output" / "llm_cache.jsonl", rpm=args.rpm)
+        except FatalLLMError as e:
+            raise SystemExit(f"LLM run aborted: {e}")
 
-    drafts = []
+    drafts, failures, quota_hit = [], 0, False
     for _, row in scored.iterrows():
-        if args.mode == "llm":
+        source = "template"
+        d = template_draft(row, startup, args.sender)
+        if client and not quota_hit:
             try:
-                if args.provider == "claude":
-                    d = claude_draft(client, model, row, startup)
-                else:
-                    d = gemini_draft(model, row, startup)
-                    time.sleep(4)  # Gemini free-tier rate limit
+                raw = client.complete_json(
+                    LLM_SYSTEM, f"INVESTOR: {investor_blob(row)}\nSTARTUP: {json.dumps(startup)}")
+                d = {"subject": str(raw["subject"]), "body": str(raw["body"])}
+                source = "llm"
+            except FatalLLMError as e:
+                raise SystemExit(f"LLM run aborted: {e}")
+            except QuotaExhausted:
+                quota_hit = True
+                source = "template_fallback"
             except Exception as e:
-                print(f"  ! {row['name']}: {e} - falling back to template")
-                d = demo_draft(row, startup, args.sender)
-        else:
-            d = demo_draft(row, startup, args.sender)
+                failures += 1
+                print(f"  ! {row['name']}: {e} - template fallback")
+                source = "template_fallback"
         drafts.append({"rank": row["rank"], "name": row["name"],
                        "contact_email": row["contact_email"],
-                       "total_score": row["total_score"], **d})
+                       "total_score": row["total_score"], **d,
+                       "draft_source": source, "grounded": is_grounded(d["body"], row)})
 
     out = ROOT / "output" / "outreach_drafts.csv"
-    pd.DataFrame(drafts).to_csv(out, index=False)
-    print(f"Wrote {len(drafts)} outreach drafts to {out} (mode={args.mode})")
+    df = pd.DataFrame(drafts)
+    df.to_csv(out, index=False)
+    print(f"Wrote {len(df)} outreach drafts to {out}")
+    print(f"  sources: {df['draft_source'].value_counts().to_dict()}")
+    print(f"  grounded (cites a real portfolio company): {int(df['grounded'].sum())}/{len(df)}")
+    if quota_hit:
+        print("  !! daily quota reached - remaining drafts are templates; re-run tomorrow.")
     print(f"\nSample draft for #{drafts[0]['rank']} {drafts[0]['name']}:\n")
     print(drafts[0]["subject"])
     print(drafts[0]["body"][:400])

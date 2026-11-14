@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Investor Finder · HealthTech Europe</title>
+  <meta name="description" content="Find the right European health investors for your startup in seconds: 88 verified VCs, angel networks and family offices, ranked on four simple questions, with ready-to-send email drafts.">
+  <meta property="og:title" content="Investor Finder for HealthTech & MedTech founders">
+  <meta property="og:description" content="88 verified European health investors, ranked for your startup in seconds. Free, no sign-up.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232a78d6'/%3E%3Ccircle cx='14' cy='14' r='6.5' stroke='white' stroke-width='2.6' fill='none'/%3E%3Cpath d='M19 19l5.5 5.5' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script>try { var t = localStorage.getItem("ifinder-theme"); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+</head>
+<body>
+  <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="Investor Finder, back to top">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><rect width="32" height="32" rx="9"/><circle cx="14" cy="14" r="6.5"/><path d="M19 19l5.5 5.5"/></svg></span>
+        <span>Investor Finder</span>
+      </a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#how">How it works</a>
+        <a href="#finder">Find investors</a>
+        <a href="#pipeline">My pipeline <span class="nav-count" id="nav-count" hidden></span></a>
+        <a href="#proof">Does it work?</a>
+        <a href="#data">The data</a>
+      </nav>
+      <div class="nav-actions">
+        <a class="btn btn-primary btn-sm" href="#finder">Try it free</a>
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle dark mode">
+          <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+          <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- 1 · PROBLEM -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">For HealthTech &amp; MedTech founders in Europe</p>
+          <h1>Raising money?<br><span class="grad">Find the right investors</span> in 10 seconds.</h1>
+          <p class="lede">Most investors will never back your startup: wrong field, wrong stage, wrong cheque size. Tell us about yours and we check <b id="n-inv">88</b> verified European health investors on four simple questions, then show you who to email first, with a ready-to-send draft.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary btn-lg" href="#finder">Find my investors <span aria-hidden="true">→</span></a>
+            <a class="btn btn-ghost btn-lg" href="#how">How it works</a>
+          </div>
+          <ul class="trust">
+            <li><b id="n-inv2">88</b> verified investors</li>
+            <li><b id="n-countries">12</b> countries</li>
+            <li><b>0</b> sign-ups</li>
+          </ul>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="swarm-card">
+            <div class="swarm-head">
+              <span class="swarm-dot"></span><span id="swarm-label">88 investors, unsorted</span>
+            </div>
+            <svg id="swarm" viewBox="0 0 400 330"></svg>
+            <div class="swarm-foot">
+              <span><i class="k k-hi"></i>Strong match</span>
+              <span><i class="k k-mid"></i>Possible</span>
+              <span><i class="k k-lo"></i>Skip</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 · HOW IT WORKS -->
+    <section class="section" id="how">
+      <div class="wrap">
+        <div class="head center">
+          <p class="kicker">How it works</p>
+          <h2>Four questions, asked of every investor</h2>
+          <p class="sub">The same four things an experienced fundraiser checks first. Each gets a score; together they make one match score.</p>
+        </div>
+        <div class="questions">
+          <article class="q reveal">
+            <div class="q-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10.2A4.3 4.3 0 0112 7.5a4.3 4.3 0 017 3.3C19 16.6 12 21 12 21z"/></svg></div>
+            <span class="q-w">40%</span>
+            <h3>Do they back your field?</h3>
+            <p>Health specialists who name your area (diagnostics, devices, digital health…) score highest.</p>
+          </article>
+          <article class="q reveal">
+            <div class="q-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 18h4v-4H4zM10 18h4V10h-4zM16 18h4V6h-4z"/></svg></div>
+            <span class="q-w">25%</span>
+            <h3>Do they invest at your stage?</h3>
+            <p>A Series B fund won't lead your pre-seed. Exact stage scores full, the stage next to it half.</p>
+          </article>
+          <article class="q reveal">
+            <div class="q-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/></svg></div>
+            <span class="q-w">20%</span>
+            <h3>Does their cheque fit your round?</h3>
+            <p>Their usual ticket has to fit inside what you're raising, not dwarf it.</p>
+          </article>
+          <article class="q reveal">
+            <div class="q-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s6-5.7 6-11a6 6 0 10-12 0c0 5.3 6 11 6 11z"/><circle cx="12" cy="10" r="2.2"/></svg></div>
+            <span class="q-w">15%</span>
+            <h3>Do they invest where you are?</h3>
+            <p>Local investors first, then Europe. Regional funds that only back one state are flagged.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 · THE TOOL -->
+    <section class="section section-tint" id="finder">
+      <div class="wrap">
+        <div class="head center">
+          <p class="kicker">Find investors</p>
+          <h2>Your startup in, your shortlist out</h2>
+          <p class="sub">Change anything on the left; the list updates instantly. Everything runs in your browser, nothing is sent anywhere.</p>
+        </div>
+
+        <div class="finder">
+          <form class="panel form" id="form" autocomplete="off" onsubmit="return false">
+            <details class="ai-box" id="ai-box">
+              <summary><span class="spark" aria-hidden="true">✦</span> Let AI fill this in <span class="hint">optional · free key</span></summary>
+              <div class="field">
+                <label class="lbl" for="ai-text">Describe your startup, or paste your website link</label>
+                <textarea id="ai-text" rows="4" placeholder="e.g. We build AI software that flags sepsis risk from hospital records. Munich-based, raising a €1.5M seed."></textarea>
+              </div>
+              <div class="field keybox">
+                <label class="lbl" for="ai-key">Gemini API key <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">get one free ↗</a></label>
+                <input type="password" id="ai-key" placeholder="Paste your key" autocomplete="off" spellcheck="false">
+                <div class="key-row">
+                  <label class="check"><input type="checkbox" id="ai-remember"> Remember on this device</label>
+                  <button class="link-btn" type="button" id="ai-forget" hidden>Forget key</button>
+                </div>
+                <p class="fine">Your key stays in this browser and is sent only to Google's Gemini API.</p>
+              </div>
+              <div class="ai-actions">
+                <button class="btn btn-primary btn-sm" type="button" id="ai-fill"><span aria-hidden="true">✦</span> Fill the form</button>
+                <span class="ai-status" id="ai-status" role="status"></span>
+              </div>
+            </details>
+            <div class="field">
+              <label class="lbl">What do you build? <span class="hint">pick all that fit</span></label>
+              <div class="chips" id="f-sector"></div>
+            </div>
+            <div class="field">
+              <label class="lbl">Your stage</label>
+              <div class="seg" id="f-stage" role="group" aria-label="Stage"></div>
+            </div>
+            <div class="field">
+              <label class="lbl" for="f-raise">How much are you raising? <b id="raise-val">€1M</b></label>
+              <input type="range" id="f-raise" min="0" max="8" step="1" value="3">
+              <div class="range-ticks"><span>€250K</span><span>€1M</span><span>€5M</span><span>€20M</span></div>
+            </div>
+            <div class="field">
+              <label class="lbl" for="f-country">Where is your company?</label>
+              <select id="f-country"></select>
+            </div>
+            <details class="more">
+              <summary>Name &amp; pitch <span class="hint">for email drafts</span></summary>
+              <div class="field">
+                <label class="lbl" for="f-name">Startup name</label>
+                <input type="text" id="f-name" placeholder="e.g. CareLoop">
+              </div>
+              <div class="field">
+                <label class="lbl" for="f-pitch">One line about what you do</label>
+                <input type="text" id="f-pitch" placeholder="e.g. AI triage for hospital emergency rooms">
+              </div>
+              <div class="field">
+                <label class="lbl" for="f-sender">Your name</label>
+                <input type="text" id="f-sender" placeholder="e.g. Alex Weber">
+              </div>
+            </details>
+            <details class="more">
+              <summary>Investor types <span class="hint">all by default</span></summary>
+              <div class="chips" id="f-types"></div>
+            </details>
+            <button class="link-btn" type="button" id="f-reset">Reset to example</button>
+          </form>
+
+          <div class="results">
+            <div class="results-head">
+              <div>
+                <h3 id="r-title">Your top matches</h3>
+                <p class="muted" id="r-sub"></p>
+              </div>
+              <button class="btn btn-ghost btn-sm" type="button" id="r-export">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg>Export CSV
+              </button>
+            </div>
+            <ol class="cards" id="r-list"></ol>
+            <div class="results-foot"><button class="btn btn-soft" type="button" id="r-more">Show all</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PIPELINE -->
+    <section class="section" id="pipeline">
+      <div class="wrap">
+        <div class="head center">
+          <p class="kicker">My pipeline</p>
+          <h2>Track every conversation</h2>
+          <p class="sub">Save investors from the list with ☆. Drag them across as things move, set follow-up dates, keep notes. Saved only in this browser.</p>
+        </div>
+        <div class="pipe-bar">
+          <div class="pipe-stats" id="p-stats"></div>
+          <div class="pipe-tools">
+            <button class="btn btn-ghost btn-sm" type="button" id="p-export"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg>Export CSV</button>
+            <button class="link-btn danger" type="button" id="p-clear">Clear pipeline</button>
+          </div>
+        </div>
+        <div class="board" id="board"></div>
+        <div class="pipe-empty panel" id="p-empty">
+          <div class="pe-ico" aria-hidden="true">☆</div>
+          <h3>Your pipeline is empty</h3>
+          <p class="muted">Save investors from your shortlist and they'll show up here, ready to email and track.</p>
+          <a class="btn btn-primary btn-sm" href="#finder">Go to the finder</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 · DOES IT WORK -->
+    <section class="section" id="proof">
+      <div class="wrap proof">
+        <div class="proof-copy">
+          <p class="kicker">Does it work?</p>
+          <h2>About as consistent as an expert, in seconds</h2>
+          <p class="sub" id="proof-text"></p>
+          <details class="tech">
+            <summary>For the technical reader</summary>
+            <ul id="proof-tech"></ul>
+          </details>
+        </div>
+        <div class="proof-visual reveal" aria-hidden="true">
+          <div class="pv-row"><span class="pv-l">Expert's top 10</span><div class="pv-dots" id="pv-a"></div></div>
+          <svg class="pv-links" id="pv-links" viewBox="0 0 400 60" preserveAspectRatio="none"></svg>
+          <div class="pv-row"><span class="pv-l">Tool's top 10</span><div class="pv-dots" id="pv-b"></div></div>
+          <p class="pv-cap"><b id="pv-n">7</b> of 10 picks match. The expert re-doing their own list matched <b id="pv-self">7</b> of 10.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 · THE DATA -->
+    <section class="section section-tint" id="data">
+      <div class="wrap">
+        <div class="head center">
+          <p class="kicker">The data</p>
+          <h2>Real investors, checked one by one</h2>
+          <p class="sub">VC funds, angel networks, family offices, corporate and public funds that invest in European health startups. Every website was opened and checked live; dead or unconfirmed ones were removed. Public firm information only, no personal data.</p>
+        </div>
+        <div class="data-grid">
+          <div class="panel pad reveal"><h3>By country</h3><div id="d-country" class="bars"></div></div>
+          <div class="panel pad reveal"><h3>By type</h3><div id="d-type" class="bars"></div></div>
+          <div class="panel pad reveal"><h3>By stage they invest at</h3><div id="d-stage" class="bars"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="wrap cta-inner">
+        <h2>Ready to see your list?</h2>
+        <a class="btn btn-primary btn-lg" href="#finder">Find my investors <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <p><b>Built by Om Rana</b> · Python + vanilla JS · data checked 23 Oct 2026</p>
+      <p class="muted">Not investment advice. Investor focus changes: check their website before you write.</p>
+    </div>
+  </footer>
+
+  <!-- email draft modal -->
+  <div class="scrim" id="scrim" hidden></div>
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="m-title" hidden>
+    <div class="modal-head">
+      <div>
+        <p class="kicker" id="m-kicker">Email draft</p>
+        <h3 id="m-title"></h3>
+      </div>
+      <button class="icon-btn" type="button" id="m-close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <label class="lbl" for="m-to">To</label>
+    <input type="text" id="m-to">
+    <label class="lbl" for="m-subject">Subject</label>
+    <input type="text" id="m-subject">
+    <label class="lbl" for="m-body">Message <span class="hint">edit freely</span></label>
+    <textarea id="m-body" rows="11"></textarea>
+    <div class="modal-actions">
+      <a class="btn btn-primary" id="m-mail" href="#">Open in email app</a>
+      <button class="btn btn-ghost" type="button" id="m-copy">Copy text</button>
+      <button class="btn btn-ai" type="button" id="m-ai"><span aria-hidden="true">✦</span> Personalize with AI</button>
+    </div>
+    <p class="ai-status" id="m-status" role="status"></p>
+    <p class="fine">Opening it in your email app also moves this investor to <b>Emailed</b> in your pipeline, with a follow-up in 7 days.</p>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="investors.js"></script>
+  <script src="proof.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

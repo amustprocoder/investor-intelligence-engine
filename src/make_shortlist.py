@@ -1,10 +1,17 @@
 """
-Build the "manual shortlist" ground-truth file (data/manual_shortlist.csv).
+Build the SIMULATED analyst shortlist (data/manual_shortlist.csv).
 
-In the real project this file came from a human analyst's 40-investor pipeline
-built during a live EUR 1.5M MedTech fundraise. For the public repo we recreate
-an equivalent: an analyst-style heuristic pass (healthcare thesis + right stage
-+ DACH-first) with a bit of human judgment noise, applied to the same universe.
+Honest framing: the real 40-investor pipeline from the live EUR 1.5M MedTech
+fundraise is client-confidential and was built on a different (real) universe,
+so it cannot be the ground truth for this synthetic dataset. Instead this
+script simulates an analyst: a heuristic screen with its own emphasis
+(healthcare sector names, DACH-first, Seed) plus random "judgment noise"
+for gut feel and brand familiarity. Everything the repo reports as
+"agreement with the analyst" is agreement with this simulated screen.
+
+The noise term matters: re-running the same analyst with a different noise
+seed gives a different shortlist, which caps how much agreement any model
+can reach (see tune_rubric.py -> noise ceiling).
 
 Run after generate_dataset.py:  python src/make_shortlist.py
 """
@@ -14,17 +21,19 @@ from pathlib import Path
 
 import pandas as pd
 
-random.seed(7)  # different seed than the dataset - independent "human" judgment
-
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
+
+SHORTLIST_SEED = 7  # different seed than the dataset - independent "analyst" judgment
+SHORTLIST_SIZE = 40
+NOISE = 12          # +/- points of gut-feel noise per investor
 
 HEALTH_TERMS = ["Medical Devices", "Digital Health", "HealthTech", "AI in Healthcare",
                 "Diagnostics", "Radiology AI", "Clinical Software"]
 
 
-def analyst_pass(row: pd.Series) -> float:
-    """How a human analyst 'feels' about a target - similar rubric, different emphasis."""
+def analyst_base(row: pd.Series) -> float:
+    """The analyst's systematic preferences - similar rubric, different emphasis."""
     score = 0.0
     sectors = str(row["sectors"])
     thesis = str(row["thesis"]).lower()
@@ -43,20 +52,26 @@ def analyst_pass(row: pd.Series) -> float:
     # Ticket: humans eyeball it rather than compute overlap
     if row["ticket_min_eur"] <= 1_500_000 and row["ticket_max_eur"] >= 250_000:
         score += 10
-
-    # Human judgment noise: pattern-matching, brand familiarity, gut feel
-    score += random.uniform(-12, 12)
     return score
+
+
+def build_shortlist(investors: pd.DataFrame, seed: int = SHORTLIST_SEED,
+                    size: int = SHORTLIST_SIZE) -> pd.DataFrame:
+    """One analyst pass: systematic score + gut-feel noise, top `size` kept."""
+    rng = random.Random(seed)
+    scored = investors.copy()
+    scored["analyst_score"] = [analyst_base(r) + rng.uniform(-NOISE, NOISE)
+                               for _, r in investors.iterrows()]
+    return scored.sort_values("analyst_score", ascending=False).head(size)
 
 
 def main() -> None:
     investors = pd.read_csv(DATA / "investors.csv")
-    investors["analyst_score"] = investors.apply(analyst_pass, axis=1)
-    shortlist = investors.sort_values("analyst_score", ascending=False).head(40)
+    shortlist = build_shortlist(investors)
     out = DATA / "manual_shortlist.csv"
     shortlist[["investor_id", "name", "type", "hq_country", "geography_focus",
                "stage_focus", "sectors"]].to_csv(out, index=False)
-    print(f"Wrote 40-investor manual shortlist to {out}")
+    print(f"Wrote {len(shortlist)}-investor simulated analyst shortlist to {out}")
 
 
 if __name__ == "__main__":

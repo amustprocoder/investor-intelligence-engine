@@ -1,8 +1,14 @@
 {
-  "model_top40_vs_human_top40_overlap": 30,
-  "precision_at_40": 0.75,
+  "n_investors_scored": 520,
+  "model_top40_vs_human_top40_overlap": 29,
+  "precision_at_40": 0.725,
+  "precision_at_40_ci95": [
+    0.572,
+    0.839
+  ],
   "recall_at_80": 0.85,
-  "mean_model_rank_of_human_picks": 37.8,
+  "roc_auc": 0.964,
+  "mean_model_rank_of_human_picks": 38.0,
   "human_picks_missed_by_model_top80": [
     "David Huber",
     "Drift Partners",
@@ -10,5 +16,7 @@
     "Falcon Growth",
     "Willow Venture Partners",
     "Sebastian Rossi"
-  ]
+  ],
+  "in_sample": true,
+  "note": "v2 parameters were tuned on this shortlist; see tuning_report.json for held-out numbers."
 }
